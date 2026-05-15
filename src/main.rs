@@ -1,3 +1,6 @@
+mod error;
+mod file_loader;
+
 use clap::{Parser, ValueEnum};
 
 #[derive(Debug, Parser, ValueEnum, Clone, Copy)]
