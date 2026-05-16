@@ -2,6 +2,7 @@ mod app;
 mod error;
 mod event;
 mod file_loader;
+mod ui;
 
 use clap::{Parser, ValueEnum};
 
