@@ -1,7 +1,10 @@
+mod app;
 mod error;
 mod file_loader;
 
 use clap::{Parser, ValueEnum};
+
+use crate::{app::App, error::Result, file_loader::FileLoader};
 
 #[derive(Debug, Parser, ValueEnum, Clone, Copy)]
 enum ImageFormat {
@@ -20,14 +23,24 @@ struct Args {
     format: ImageFormat,
 }
 
-fn main() {
-    let args = Args::parse();
-    let conf = viuer::Config {
-        x: 0,
-        y: 0,
-        ..Default::default()
-    };
+fn calculate_frame_size(format: ImageFormat, width: u16, height: u16) -> usize {
+    let pixel_count = width as usize * height as usize;
 
-    let img = image::DynamicImage::ImageRgba8(image::RgbaImage::new(20, 10));
-    viuer::print(&img, &conf).expect("Image printing failed.");
+    match format {
+        ImageFormat::RGBA8 => pixel_count * 4,
+    }
+}
+
+fn main() -> Result<()> {
+    let args = Args::parse();
+
+    let frame_size = calculate_frame_size(args.format, args.width, args.height);
+    let file_loader = FileLoader::new(&args.path, frame_size, true)?;
+
+    color_eyre::install()?;
+    let terminal = ratatui::init();
+    let app = App::new(file_loader)?.start(terminal);
+    ratatui::restore();
+
+    Ok(())
 }
