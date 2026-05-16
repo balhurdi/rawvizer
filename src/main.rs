@@ -1,5 +1,6 @@
 mod app;
 mod error;
+mod event;
 mod file_loader;
 
 use clap::{Parser, ValueEnum};
@@ -31,7 +32,8 @@ fn calculate_frame_size(format: ImageFormat, width: u16, height: u16) -> usize {
     }
 }
 
-fn main() -> Result<()> {
+#[tokio::main]
+async fn main() -> Result<()> {
     let args = Args::parse();
 
     let frame_size = calculate_frame_size(args.format, args.width, args.height);

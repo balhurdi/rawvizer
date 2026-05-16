@@ -4,9 +4,11 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
-clap = {version = "4.6.1", features = ["derive"]}
+clap = { version = "4.6.1", features = ["derive"] }
 color-eyre = "0.6.5"
+crossterm = { version = "0.28.1", features = ["event-stream"] }
 image = "0.25.10"
 ratatui = "0.30.0"
 ratatui-image = "11.0.2"
 thiserror = "2.0.18"
+tokio = { version = "1.52.3", features = ["full"] }
