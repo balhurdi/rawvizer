@@ -10,6 +10,8 @@ pub enum Error {
     ColorErye(#[from] color_eyre::eyre::Error),
     #[error("Ratatui IO error")]
     RatatuiIO(#[from] std::io::Error),
+    #[error("No events present")]
+    NoEvents,
 }
 
 pub type Result<T> = std::result::Result<T, Error>;

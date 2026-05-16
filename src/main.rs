@@ -41,7 +41,9 @@ async fn main() -> Result<()> {
 
     color_eyre::install()?;
     let terminal = ratatui::init();
-    let app = App::new(file_loader)?.start(terminal);
+
+    App::new(file_loader)?.start(terminal).await?;
+
     ratatui::restore();
 
     Ok(())
