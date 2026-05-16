@@ -1,0 +1,63 @@
+use image::DynamicImage;
+use ratatui::{
+    layout::{Constraint, Layout},
+    style::Style,
+    widgets::{Paragraph, StatefulWidget, Widget},
+};
+use ratatui_image::{ResizeEncodeRender, picker::Picker, protocol::StatefulProtocol};
+
+pub struct VideoPlayerState {
+    image: Option<StatefulProtocol>,
+    picker: Picker,
+}
+
+impl VideoPlayerState {
+    pub fn new() -> Self {
+        let picker = Picker::from_query_stdio().unwrap_or_else(|_| Picker::halfblocks());
+        Self {
+            image: None,
+            picker,
+        }
+    }
+
+    pub fn update_picture(&mut self, image: DynamicImage) {
+        self.image = Some(self.picker.new_resize_protocol(image));
+    }
+}
+
+pub struct VideoPlayer;
+
+impl VideoPlayer {
+    pub fn new() -> Self {
+        Self
+    }
+}
+
+impl StatefulWidget for VideoPlayer {
+    type State = VideoPlayerState;
+
+    fn render(
+        self,
+        area: ratatui::prelude::Rect,
+        buf: &mut ratatui::prelude::Buffer,
+        state: &mut Self::State,
+    ) {
+        if let Some(img) = &mut state.image {
+            img.render(area, buf);
+        } else {
+            let loading_paragraph = Paragraph::new("Loading...")
+                .centered()
+                .style(Style::new().bold());
+
+            let layout = Layout::vertical([
+                Constraint::Ratio(1, 3),
+                Constraint::Ratio(1, 3),
+                Constraint::Ratio(1, 3),
+            ]);
+
+            let [_, center, _] = area.layout(&layout);
+
+            loading_paragraph.render(center, buf);
+        }
+    }
+}
