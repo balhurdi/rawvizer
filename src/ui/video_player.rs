@@ -5,7 +5,7 @@ use ratatui::{
     style::Style,
     widgets::{Paragraph, StatefulWidget, Widget},
 };
-use ratatui_image::{ResizeEncodeRender, picker::Picker, protocol::StatefulProtocol};
+use ratatui_image::{StatefulImage, picker::Picker, protocol::StatefulProtocol};
 
 pub struct VideoPlayerState {
     image: Option<StatefulProtocol>,
@@ -41,7 +41,7 @@ impl StatefulWidget for VideoPlayer {
 
     fn render(self, area: Rect, buf: &mut Buffer, state: &mut Self::State) {
         if let Some(img) = &mut state.image {
-            img.render(area, buf);
+            StatefulImage::default().render(area, buf, img);
         } else {
             let loading_paragraph = Paragraph::new("Loading...")
                 .centered()
