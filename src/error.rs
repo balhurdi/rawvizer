@@ -12,6 +12,8 @@ pub enum Error {
     RatatuiIO(#[from] std::io::Error),
     #[error("No events present")]
     NoEvents,
+    #[error("Invalid buffer size")]
+    InvalidBufferSize,
 }
 
 pub type Result<T> = std::result::Result<T, Error>;

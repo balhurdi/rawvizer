@@ -1,6 +1,7 @@
 use image::DynamicImage;
 use ratatui::{
-    layout::{Constraint, Layout},
+    buffer::Buffer,
+    layout::{Constraint, Layout, Rect},
     style::Style,
     widgets::{Paragraph, StatefulWidget, Widget},
 };
@@ -14,6 +15,7 @@ pub struct VideoPlayerState {
 impl VideoPlayerState {
     pub fn new() -> Self {
         let picker = Picker::from_query_stdio().unwrap_or_else(|_| Picker::halfblocks());
+
         Self {
             image: None,
             picker,
@@ -21,7 +23,8 @@ impl VideoPlayerState {
     }
 
     pub fn update_picture(&mut self, image: DynamicImage) {
-        self.image = Some(self.picker.new_resize_protocol(image));
+        let stateful_image = self.picker.new_resize_protocol(image);
+        self.image = Some(stateful_image);
     }
 }
 
@@ -36,12 +39,7 @@ impl VideoPlayer {
 impl StatefulWidget for VideoPlayer {
     type State = VideoPlayerState;
 
-    fn render(
-        self,
-        area: ratatui::prelude::Rect,
-        buf: &mut ratatui::prelude::Buffer,
-        state: &mut Self::State,
-    ) {
+    fn render(self, area: Rect, buf: &mut Buffer, state: &mut Self::State) {
         if let Some(img) = &mut state.image {
             img.render(area, buf);
         } else {

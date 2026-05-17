@@ -10,7 +10,7 @@ crossterm = { version = "0.28.1", features = ["event-stream"] }
 futures = "0.3.31"
 image = "0.25.10"
 ratatui = "0.30.0"
-ratatui-image = "11.0.2"
+ratatui-image = { version = "11.0.2", features = ["crossterm"] }
 thiserror = "2.0.18"
 tokio = { version = "1.52.3", features = ["full"] }
 
