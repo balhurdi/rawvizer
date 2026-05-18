@@ -1,0 +1,2 @@
+tests/raw-videos/smpte.rgb8 filter=lfs diff=lfs merge=lfs -text
+tests/raw-videos/snow.rgb8 filter=lfs diff=lfs merge=lfs -text
