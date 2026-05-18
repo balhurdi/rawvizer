@@ -1,28 +1,33 @@
 use crossterm::event::{Event as CrosstermEvent, KeyCode, KeyEvent, KeyEventKind};
-use image::{DynamicImage, RgbImage};
+use image::DynamicImage;
 use ratatui::DefaultTerminal;
 
 use crate::{
-    error::{Error, Result},
-    event::{AppEvent, Event, EventHandler},
+    caps::VideoFrameFormat,
+    error::Result,
+    event_systems::{AppEvent, Event, EventHandler, Tape, TapeController, TapeEvent},
     file_loader::FileLoader,
     ui::VideoPlayerState,
 };
 
 pub struct App {
     events: EventHandler,
-    file_loader: FileLoader,
     running: bool,
     video_player_state: VideoPlayerState,
+    tape_controller: TapeController,
+    frame_request_in_flight: bool,
 }
 
 impl App {
-    pub fn new(file_loader: FileLoader) -> Result<Self> {
+    pub fn new(file_loader: FileLoader, frame_format: VideoFrameFormat) -> Result<Self> {
+        let (tape_controller, tape_recv) = Tape::new(file_loader, frame_format).start();
+
         Ok(Self {
-            events: EventHandler::new(),
-            file_loader,
+            events: EventHandler::new(tape_recv),
             running: true,
             video_player_state: VideoPlayerState::new(),
+            tape_controller,
+            frame_request_in_flight: false,
         })
     }
 
@@ -39,8 +44,12 @@ impl App {
 
                 Event::App(app_event) => match app_event {
                     AppEvent::Quit => self.running = false,
-                    AppEvent::NextFrame => self.update_to_next_frame()?,
+                    AppEvent::NextFrame => self.request_next_frame()?,
                     AppEvent::PreviousFrame => {}
+                    AppEvent::FrameReady(image) => self.present_next_frame(image),
+                    AppEvent::InternalError(err) => {
+                        panic!("{err}")
+                    }
                 },
             }
         }
@@ -61,14 +70,18 @@ impl App {
         }
     }
 
-    fn update_to_next_frame(&mut self) -> Result<()> {
-        if let Some(Ok(fb)) = self.file_loader.next() {
-            let image = RgbImage::from_raw(1920, 1080, fb.data().to_vec())
-                .ok_or(Error::InvalidBufferSize)?;
-            let dynamic_image = DynamicImage::from(image);
-            self.video_player_state.update_picture(dynamic_image);
+    fn request_next_frame(&mut self) -> Result<()> {
+        if self.frame_request_in_flight {
+            return Ok(());
         }
+        self.frame_request_in_flight = true;
+        self.tape_controller.send_event(TapeEvent::NextFrame)?;
 
         Ok(())
+    }
+
+    fn present_next_frame(&mut self, image: DynamicImage) {
+        self.frame_request_in_flight = false;
+        self.video_player_state.update_picture(image);
     }
 }

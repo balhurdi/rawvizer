@@ -1,5 +1,7 @@
 use thiserror::Error;
 
+use crate::event_systems::TapeEvent;
+
 #[derive(Debug, Error)]
 pub enum Error {
     #[error("Failed to open file {0}: {1}")]
@@ -14,6 +16,8 @@ pub enum Error {
     NoEvents,
     #[error("Invalid buffer size")]
     InvalidBufferSize,
+    #[error("Error in the tape channel")]
+    TapeChannel(#[from] tokio::sync::mpsc::error::SendError<TapeEvent>),
 }
 
 pub type Result<T> = std::result::Result<T, Error>;

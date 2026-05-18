@@ -1,16 +1,30 @@
 mod app;
+mod caps;
 mod error;
-mod event;
+mod event_systems;
 mod file_loader;
 mod ui;
 
 use clap::{Parser, ValueEnum};
 
-use crate::{app::App, error::Result, file_loader::FileLoader};
+use crate::{
+    app::App,
+    caps::{PixelFromat, VideoFrameFormat},
+    error::Result,
+    file_loader::FileLoader,
+};
 
 #[derive(Debug, Parser, ValueEnum, Clone, Copy)]
 enum ImageFormat {
     RGB8,
+}
+
+impl From<ImageFormat> for PixelFromat {
+    fn from(value: ImageFormat) -> Self {
+        match value {
+            ImageFormat::RGB8 => PixelFromat::RGB8,
+        }
+    }
 }
 
 #[derive(Parser)]
@@ -25,26 +39,28 @@ struct Args {
     format: ImageFormat,
 }
 
-fn calculate_frame_size(format: ImageFormat, width: u16, height: u16) -> usize {
-    let pixel_count = width as usize * height as usize;
-
-    match format {
-        ImageFormat::RGB8 => pixel_count * 3,
+fn build_frame_format(args: &Args) -> VideoFrameFormat {
+    VideoFrameFormat {
+        pixel_format: args.format.into(),
+        width: args.width,
+        height: args.height,
     }
 }
 
 #[tokio::main]
 async fn main() -> Result<()> {
+    console_subscriber::init();
+
     let args = Args::parse();
 
-    let frame_size = calculate_frame_size(args.format, args.width, args.height);
-    let file_loader = FileLoader::new(&args.path, frame_size, true)?;
+    let frame_format = build_frame_format(&args);
+    let file_loader = FileLoader::new(&args.path, frame_format.frame_size(), true)?;
 
     color_eyre::install()?;
 
     let terminal = ratatui::init();
 
-    App::new(file_loader)?.start(terminal).await?;
+    App::new(file_loader, frame_format)?.start(terminal).await?;
 
     ratatui::restore();
 
