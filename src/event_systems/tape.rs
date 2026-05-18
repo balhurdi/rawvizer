@@ -7,6 +7,9 @@ use crate::{
     file_loader::FileLoader,
 };
 
+const THUMBNAIL_WIDTH: u32 = 1280;
+const THUMBNAIL_HEIGHT: u32 = 720;
+
 #[derive(Debug, Clone)]
 pub enum TapeEvent {
     NextFrame,
@@ -56,7 +59,9 @@ impl Tape {
 
                         match image {
                             Ok(img) => {
-                                let dynamic_image = DynamicImage::from(img);
+                                let dynamic_image = DynamicImage::from(img)
+                                    .thumbnail(THUMBNAIL_WIDTH, THUMBNAIL_HEIGHT);
+
                                 let _ = frame_receiver_tx
                                     .send(FrameReceiverEvent::Frame(dynamic_image));
                             }
