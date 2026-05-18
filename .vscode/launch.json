@@ -1,0 +1,24 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Launch",
+            "program": "${workspaceFolder}/target/debug/rawvis",
+            "args": [
+                "--path",
+                "tests/raw-videos/smpte.rgb8",
+                "--width",
+                "1920",
+                "--height",
+                "1080",
+                "--format",
+                "rgba8"
+            ],
+            "cwd": "${workspaceFolder}",
+            "preLaunchTask": "Build rawvis"
+        }
+    ],
+    "compounds": []
+}
