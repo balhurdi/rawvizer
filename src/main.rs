@@ -11,18 +11,20 @@ use crate::{
     app::App,
     error::Result,
     file_loader::FileLoader,
-    video::{PixelFromat, VideoFrameFormat},
+    video::{PixelFormat, VideoFrameFormat},
 };
 
 #[derive(Debug, Parser, ValueEnum, Clone, Copy)]
 enum ImageFormat {
     RGB8,
+    V210,
 }
 
-impl From<ImageFormat> for PixelFromat {
+impl From<ImageFormat> for PixelFormat {
     fn from(value: ImageFormat) -> Self {
         match value {
-            ImageFormat::RGB8 => PixelFromat::RGB8,
+            ImageFormat::RGB8 => PixelFormat::RGB8,
+            ImageFormat::V210 => PixelFormat::V210,
         }
     }
 }
