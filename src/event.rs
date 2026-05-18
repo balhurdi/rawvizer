@@ -1,9 +1,13 @@
 use crossterm::event::Event as CrosstermEvent;
 
 use futures::{FutureExt, StreamExt};
+use image::DynamicImage;
 use tokio::sync::mpsc;
 
-use crate::error::{Error, Result};
+use crate::{
+    error::{Error, Result},
+    tape::{FrameReceiverEvent, TapeFrameReceiver},
+};
 
 #[derive(Debug, Clone)]
 pub enum Event {
@@ -16,6 +20,8 @@ pub enum AppEvent {
     Quit,
     NextFrame,
     PreviousFrame,
+    FrameReady(DynamicImage),
+    InternalError(String),
 }
 
 pub struct EventHandler {
@@ -24,10 +30,10 @@ pub struct EventHandler {
 }
 
 impl EventHandler {
-    pub fn new() -> Self {
+    pub fn new(tape_recv: TapeFrameReceiver) -> Self {
         let (sender, receiver) = mpsc::unbounded_channel();
         let event_task = EventTask::new(sender.clone());
-        tokio::spawn(async { event_task.run().await });
+        tokio::spawn(async { event_task.run(tape_recv).await });
 
         Self { sender, receiver }
     }
@@ -52,7 +58,7 @@ impl EventTask {
         Self { sender }
     }
 
-    async fn run(self) -> Result<()> {
+    async fn run(self, mut tape_recv: TapeFrameReceiver) -> Result<()> {
         let mut reader = crossterm::event::EventStream::new();
         loop {
             let crossterm_event = reader.next().fuse();
@@ -63,6 +69,13 @@ impl EventTask {
                 }
                 Some(Ok(evt)) = crossterm_event => {
                     self.send(Event::Crossterm(evt));
+                }
+                Some(frame) = tape_recv.receive_frame() => {
+                    match frame {
+                        FrameReceiverEvent::Frame(f) => self.send(Event::App(AppEvent::FrameReady(f))),
+                        FrameReceiverEvent::Error(e) => self.send(Event::App(AppEvent::InternalError(format!("{e}"))))
+                    }
+
                 }
             }
         }

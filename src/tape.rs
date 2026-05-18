@@ -34,6 +34,7 @@ impl Tape {
         tokio::spawn(async move {
             loop {
                 let tape_event = controller_rx.recv().await;
+
                 if let Some(te) = tape_event {
                     let frame = match te {
                         TapeEvent::NextFrame => self.file_loader.next(),
