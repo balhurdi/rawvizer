@@ -6,7 +6,7 @@ use tokio::sync::mpsc;
 
 use crate::{
     error::{Error, Result},
-    tape::{FrameReceiverEvent, TapeFrameReceiver},
+    event_systems::tape::{FrameReceiverEvent, TapeFrameReceiver},
 };
 
 #[derive(Debug, Clone)]

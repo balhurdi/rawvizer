@@ -1,6 +1,6 @@
 use thiserror::Error;
 
-use crate::tape::TapeEvent;
+use crate::event_systems::TapeEvent;
 
 #[derive(Debug, Error)]
 pub enum Error {

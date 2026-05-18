@@ -1,8 +1,7 @@
 mod app;
 mod error;
-mod event;
+mod event_systems;
 mod file_loader;
-mod tape;
 mod ui;
 
 use clap::{Parser, ValueEnum};

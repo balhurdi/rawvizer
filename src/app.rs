@@ -4,9 +4,8 @@ use ratatui::DefaultTerminal;
 
 use crate::{
     error::Result,
-    event::{AppEvent, Event, EventHandler},
+    event_systems::{AppEvent, Event, EventHandler, Tape, TapeController, TapeEvent},
     file_loader::FileLoader,
-    tape::{Tape, TapeController},
     ui::VideoPlayerState,
 };
 
@@ -75,8 +74,7 @@ impl App {
             return Ok(());
         }
         self.frame_request_in_flight = true;
-        self.tape_controller
-            .send_event(crate::tape::TapeEvent::NextFrame)?;
+        self.tape_controller.send_event(TapeEvent::NextFrame)?;
 
         Ok(())
     }
