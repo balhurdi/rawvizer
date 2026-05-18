@@ -1,7 +1,6 @@
 use crossterm::event::Event as CrosstermEvent;
 
 use futures::{FutureExt, StreamExt};
-use image::DynamicImage;
 use tokio::sync::mpsc;
 
 use crate::error::{Error, Result};
@@ -10,7 +9,6 @@ use crate::error::{Error, Result};
 pub enum Event {
     Crossterm(CrosstermEvent),
     App(AppEvent),
-    // VideoEvent(VideoEvent),
 }
 
 #[derive(Debug, Clone)]
@@ -18,11 +16,6 @@ pub enum AppEvent {
     Quit,
     NextFrame,
     PreviousFrame,
-}
-
-#[derive(Debug, Clone)]
-pub enum VideoEvent {
-    NewFrame(DynamicImage),
 }
 
 pub struct EventHandler {
