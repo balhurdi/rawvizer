@@ -32,9 +32,7 @@ impl VideoFrameFormat {
                 let width = self.width as usize;
                 let height = self.height as usize;
                 let groups = (width + 5) / 6;
-                let stride = groups * 16;
-                let aligned_stride = (stride + 47) / 48 * 48;
-                aligned_stride * height
+                groups * 16 * height
             }
         }
     }
