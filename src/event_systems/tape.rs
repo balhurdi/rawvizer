@@ -2,6 +2,7 @@ use image::{DynamicImage, RgbImage};
 use tokio::sync::mpsc::{self, UnboundedReceiver, UnboundedSender};
 
 use crate::{
+    caps::VideoFrameFormat,
     error::{Error, Result},
     file_loader::FileLoader,
 };
@@ -19,11 +20,15 @@ pub enum FrameReceiverEvent {
 
 pub struct Tape {
     file_loader: FileLoader,
+    frame_format: VideoFrameFormat,
 }
 
 impl Tape {
-    pub fn new(file_loader: FileLoader) -> Self {
-        Self { file_loader }
+    pub fn new(file_loader: FileLoader, frame_format: VideoFrameFormat) -> Self {
+        Self {
+            file_loader,
+            frame_format,
+        }
     }
 
     pub fn start(mut self) -> (TapeController, TapeFrameReceiver) {
@@ -42,8 +47,12 @@ impl Tape {
                     };
 
                     if let Some(Ok(f)) = frame {
-                        let image = RgbImage::from_raw(1920, 1080, f.data().to_vec())
-                            .ok_or(Error::InvalidBufferSize);
+                        let image = RgbImage::from_raw(
+                            self.frame_format.width as u32,
+                            self.frame_format.height as u32,
+                            f.data().to_vec(),
+                        )
+                        .ok_or(Error::InvalidBufferSize);
 
                         match image {
                             Ok(img) => {

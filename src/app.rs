@@ -3,6 +3,7 @@ use image::DynamicImage;
 use ratatui::DefaultTerminal;
 
 use crate::{
+    caps::VideoFrameFormat,
     error::Result,
     event_systems::{AppEvent, Event, EventHandler, Tape, TapeController, TapeEvent},
     file_loader::FileLoader,
@@ -18,8 +19,8 @@ pub struct App {
 }
 
 impl App {
-    pub fn new(file_loader: FileLoader) -> Result<Self> {
-        let (tape_controller, tape_recv) = Tape::new(file_loader).start();
+    pub fn new(file_loader: FileLoader, frame_format: VideoFrameFormat) -> Result<Self> {
+        let (tape_controller, tape_recv) = Tape::new(file_loader, frame_format).start();
 
         Ok(Self {
             events: EventHandler::new(tape_recv),
