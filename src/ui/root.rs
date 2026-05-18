@@ -30,10 +30,11 @@ impl Widget for &mut App {
         let playback_status_block = Block::bordered();
         let current_frame_block = Block::bordered();
 
+        let video_block_inner = video_block.inner(video);
         video_block.render(video, buf);
 
         let video_player = VideoPlayer::new();
-        video_player.render(area, buf, self.video_player_state());
+        video_player.render(video_block_inner, buf, self.video_player_state());
 
         file_name_block.render(file_name, buf);
         playback_status_block.render(playback_status, buf);

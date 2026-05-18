@@ -1,11 +1,11 @@
 use image::DynamicImage;
 use ratatui::{
     buffer::Buffer,
-    layout::{Constraint, Layout, Rect},
+    layout::{Constraint, Layout, Rect, Size},
     style::Style,
     widgets::{Paragraph, StatefulWidget, Widget},
 };
-use ratatui_image::{StatefulImage, picker::Picker, protocol::StatefulProtocol};
+use ratatui_image::{Resize, StatefulImage, picker::Picker, protocol::StatefulProtocol};
 
 pub struct VideoPlayerState {
     image: Option<StatefulProtocol>,
@@ -41,7 +41,22 @@ impl StatefulWidget for VideoPlayer {
 
     fn render(self, area: Rect, buf: &mut Buffer, state: &mut Self::State) {
         if let Some(img) = &mut state.image {
-            StatefulImage::default().render(area, buf, img);
+            let resize = Resize::Scale(None);
+            let fitting = img.size_for(resize.clone(), Size::new(area.width, area.height));
+
+            let x_off = (area.width.saturating_sub(fitting.width)) / 2;
+            let y_off = (area.height.saturating_sub(fitting.height)) / 2;
+
+            let img_area = Rect::new(
+                area.x + x_off,
+                area.y + y_off,
+                fitting.width,
+                fitting.height,
+            );
+
+            StatefulImage::default()
+                .resize(resize)
+                .render(img_area, buf, img);
         } else {
             let loading_paragraph = Paragraph::new("Loading...")
                 .centered()
