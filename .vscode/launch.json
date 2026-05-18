@@ -14,7 +14,7 @@
                 "--height",
                 "1080",
                 "--format",
-                "rgba8"
+                "rgb8"
             ],
             "cwd": "${workspaceFolder}",
             "preLaunchTask": "Build rawvis"

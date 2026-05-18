@@ -10,7 +10,7 @@ use crate::{app::App, error::Result, file_loader::FileLoader};
 
 #[derive(Debug, Parser, ValueEnum, Clone, Copy)]
 enum ImageFormat {
-    RGBA8,
+    RGB8,
 }
 
 #[derive(Parser)]
@@ -29,7 +29,7 @@ fn calculate_frame_size(format: ImageFormat, width: u16, height: u16) -> usize {
     let pixel_count = width as usize * height as usize;
 
     match format {
-        ImageFormat::RGBA8 => pixel_count * 4,
+        ImageFormat::RGB8 => pixel_count * 3,
     }
 }
 
