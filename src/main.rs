@@ -36,6 +36,8 @@ fn calculate_frame_size(format: ImageFormat, width: u16, height: u16) -> usize {
 
 #[tokio::main]
 async fn main() -> Result<()> {
+    console_subscriber::init();
+
     let args = Args::parse();
 
     let frame_size = calculate_frame_size(args.format, args.width, args.height);
