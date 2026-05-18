@@ -1,17 +1,17 @@
 mod app;
-mod caps;
 mod error;
 mod event_systems;
 mod file_loader;
 mod ui;
+mod video;
 
 use clap::{Parser, ValueEnum};
 
 use crate::{
     app::App,
-    caps::{PixelFromat, VideoFrameFormat},
     error::Result,
     file_loader::FileLoader,
+    video::{PixelFromat, VideoFrameFormat},
 };
 
 #[derive(Debug, Parser, ValueEnum, Clone, Copy)]

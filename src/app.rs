@@ -3,11 +3,11 @@ use image::DynamicImage;
 use ratatui::DefaultTerminal;
 
 use crate::{
-    caps::VideoFrameFormat,
     error::Result,
     event_systems::{AppEvent, Event, EventHandler, Tape, TapeController, TapeEvent},
     file_loader::FileLoader,
     ui::VideoPlayerState,
+    video::VideoFrameFormat,
 };
 
 pub struct App {

@@ -2,9 +2,9 @@ use image::{DynamicImage, RgbImage};
 use tokio::sync::mpsc::{self, UnboundedReceiver, UnboundedSender};
 
 use crate::{
-    caps::VideoFrameFormat,
     error::{Error, Result},
     file_loader::FileLoader,
+    video::VideoFrameFormat,
 };
 
 const THUMBNAIL_WIDTH: u32 = 1280;
