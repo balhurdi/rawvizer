@@ -15,6 +15,7 @@ pub struct App {
     running: bool,
     video_player_state: VideoPlayerState,
     tape_controller: TapeController,
+    frame_request_in_flight: bool,
 }
 
 impl App {
@@ -26,6 +27,7 @@ impl App {
             running: true,
             video_player_state: VideoPlayerState::new(),
             tape_controller,
+            frame_request_in_flight: false,
         })
     }
 
@@ -69,6 +71,10 @@ impl App {
     }
 
     fn request_next_frame(&mut self) -> Result<()> {
+        if self.frame_request_in_flight {
+            return Ok(());
+        }
+        self.frame_request_in_flight = true;
         self.tape_controller
             .send_event(crate::tape::TapeEvent::NextFrame)?;
 
@@ -76,6 +82,7 @@ impl App {
     }
 
     fn present_next_frame(&mut self, image: DynamicImage) {
+        self.frame_request_in_flight = false;
         self.video_player_state.update_picture(image);
     }
 }
