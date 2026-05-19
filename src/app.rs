@@ -10,6 +10,7 @@ use crate::{
     video::VideoFrameFormat,
 };
 
+#[derive(Debug)]
 pub struct App {
     events: EventHandler,
     running: bool,

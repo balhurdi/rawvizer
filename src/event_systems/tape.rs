@@ -105,6 +105,7 @@ impl Tape {
     }
 }
 
+#[derive(Debug)]
 pub struct TapeController {
     inner: UnboundedSender<TapeEvent>,
 }

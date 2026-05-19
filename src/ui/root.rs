@@ -6,6 +6,7 @@ use ratatui::{
 use crate::{app::App, ui::video_player::VideoPlayer};
 
 impl Widget for &mut App {
+    #[tracing::instrument]
     fn render(self, area: ratatui::prelude::Rect, buf: &mut ratatui::prelude::Buffer)
     where
         Self: Sized,

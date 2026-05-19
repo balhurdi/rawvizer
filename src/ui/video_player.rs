@@ -1,3 +1,5 @@
+use std::fmt::Debug;
+
 use image::DynamicImage;
 use ratatui::{
     buffer::Buffer,
@@ -10,6 +12,12 @@ use ratatui_image::{Resize, StatefulImage, picker::Picker, protocol::StatefulPro
 pub struct VideoPlayerState {
     image: Option<StatefulProtocol>,
     picker: Picker,
+}
+
+impl Debug for VideoPlayerState {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{:?}", self.picker)
+    }
 }
 
 impl VideoPlayerState {
@@ -28,6 +36,7 @@ impl VideoPlayerState {
     }
 }
 
+#[derive(Debug)]
 pub struct VideoPlayer;
 
 impl VideoPlayer {
@@ -39,6 +48,7 @@ impl VideoPlayer {
 impl StatefulWidget for VideoPlayer {
     type State = VideoPlayerState;
 
+    #[tracing::instrument]
     fn render(self, area: Rect, buf: &mut Buffer, state: &mut Self::State) {
         if let Some(img) = &mut state.image {
             let resize = Resize::Scale(None);
