@@ -21,6 +21,7 @@ pub enum FrameReceiverEvent {
     Error(Error),
 }
 
+#[derive(Debug)]
 pub struct Tape {
     file_loader: FileLoader,
     frame_format: VideoFrameFormat,
@@ -58,12 +59,7 @@ impl Tape {
                     };
 
                     if let Some(Ok(f)) = frame {
-                        match create_dynamic_image(
-                            &mut color_converter,
-                            self.frame_format.width as u32,
-                            self.frame_format.height as u32,
-                            f.data(),
-                        ) {
+                        match self.create_dynamic_image(&mut color_converter, f.data()) {
                             Ok(img) => {
                                 let _ = frame_receiver_tx.send(FrameReceiverEvent::Frame(img));
                             }
@@ -84,6 +80,26 @@ impl Tape {
                 inner: frame_receiver_rx,
             },
         )
+    }
+
+    #[tracing::instrument]
+    fn create_dynamic_image(
+        &mut self,
+        color_converter: &mut ColorConverter,
+        input_buffer: &[u8],
+    ) -> Result<DynamicImage> {
+        let output_buffer = color_converter.convert_frame(input_buffer);
+
+        let image = RgbImage::from_raw(
+            self.frame_format.width as u32,
+            self.frame_format.height as u32,
+            output_buffer.to_vec(),
+        )
+        .ok_or(Error::InvalidBufferSize)?;
+
+        let dynamic_image = DynamicImage::from(image).thumbnail(THUMBNAIL_WIDTH, THUMBNAIL_HEIGHT);
+
+        Ok(dynamic_image)
     }
 }
 
@@ -106,21 +122,4 @@ impl TapeFrameReceiver {
     pub async fn receive_frame(&mut self) -> Option<FrameReceiverEvent> {
         self.inner.recv().await
     }
-}
-
-#[tracing::instrument]
-fn create_dynamic_image(
-    color_converter: &mut ColorConverter,
-    width: u32,
-    height: u32,
-    input_buffer: &[u8],
-) -> Result<DynamicImage> {
-    let output_buffer = color_converter.convert_frame(input_buffer);
-
-    let image = RgbImage::from_raw(width as u32, height as u32, output_buffer.to_vec())
-        .ok_or(Error::InvalidBufferSize)?;
-
-    let dynamic_image = DynamicImage::from(image).thumbnail(THUMBNAIL_WIDTH, THUMBNAIL_HEIGHT);
-
-    Ok(dynamic_image)
 }
