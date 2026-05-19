@@ -7,11 +7,12 @@ use ratatui::{
     style::Style,
     widgets::{Paragraph, StatefulWidget, Widget},
 };
-use ratatui_image::{Resize, StatefulImage, picker::Picker, protocol::StatefulProtocol};
+use ratatui_image::{Resize, ResizeEncodeRender, StatefulImage, picker::Picker, protocol::StatefulProtocol};
 
 pub struct VideoPlayerState {
     image: Option<StatefulProtocol>,
     picker: Picker,
+    last_area: Option<Size>,
 }
 
 impl Debug for VideoPlayerState {
@@ -27,12 +28,18 @@ impl VideoPlayerState {
         Self {
             image: None,
             picker,
+            last_area: None,
         }
     }
 
     pub fn update_picture(&mut self, image: DynamicImage) {
-        let stateful_image = self.picker.new_resize_protocol(image);
-        self.image = Some(stateful_image);
+        let mut protocol = self.picker.new_resize_protocol(image);
+        if let Some(last_area) = self.last_area {
+            let resize = Resize::Scale(None);
+            let fitting = protocol.size_for(resize.clone(), last_area);
+            protocol.resize_encode(&resize, fitting);
+        }
+        self.image = Some(protocol);
     }
 }
 
@@ -50,6 +57,8 @@ impl StatefulWidget for VideoPlayer {
 
     #[tracing::instrument]
     fn render(self, area: Rect, buf: &mut Buffer, state: &mut Self::State) {
+        state.last_area = Some(Size::new(area.width, area.height));
+
         if let Some(img) = &mut state.image {
             let resize = Resize::Scale(None);
             let fitting = img.size_for(resize.clone(), Size::new(area.width, area.height));
