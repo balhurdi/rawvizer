@@ -18,6 +18,8 @@ pub enum Error {
     InvalidBufferSize,
     #[error("Error in the tape channel")]
     TapeChannel(#[from] tokio::sync::mpsc::error::SendError<TapeEvent>),
+    #[error("No dynamic image")]
+    NoDynamicImage,
 }
 
 pub type Result<T> = std::result::Result<T, Error>;

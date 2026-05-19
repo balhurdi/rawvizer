@@ -7,7 +7,7 @@ type ConversionFunc =
 pub struct ColorConverter {
     width: usize,
     height: usize,
-    result_buffer: Vec<u8>,
+    result_size: usize,
     conversion_func: ConversionFunc,
 }
 
@@ -25,16 +25,16 @@ impl ColorConverter {
         Self {
             width: from.width as usize,
             height: from.height as usize,
-            result_buffer: vec![0u8; into.frame_size()],
+            result_size: into.frame_size(),
             conversion_func: func,
         }
     }
 
     #[tracing::instrument]
-    pub fn convert_frame(&mut self, buff: &[u8]) -> &[u8] {
-        (self.conversion_func)(buff, &mut self.result_buffer, self.width, self.height);
-
-        &self.result_buffer
+    pub fn convert_frame(&mut self, buff: &[u8]) -> Vec<u8> {
+        let mut output_buffer = vec![0u8; self.result_size];
+        (self.conversion_func)(buff, &mut output_buffer, self.width, self.height);
+        output_buffer
     }
 }
 

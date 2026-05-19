@@ -10,6 +10,7 @@ use crate::{
 const THUMBNAIL_WIDTH: u32 = 1280;
 const THUMBNAIL_HEIGHT: u32 = 720;
 const INTERNAL_PIXEL_FORMAT: PixelFormat = PixelFormat::RGB8;
+
 #[derive(Debug, Clone)]
 pub enum TapeEvent {
     NextFrame,
@@ -88,18 +89,19 @@ impl Tape {
         color_converter: &mut ColorConverter,
         input_buffer: &[u8],
     ) -> Result<DynamicImage> {
+        let w = self.frame_format.width as u32;
+        let h = self.frame_format.height as u32;
+
+        if self.frame_format.pixel_format == INTERNAL_PIXEL_FORMAT {
+            let thumbnail = thumbnail_rgb8(input_buffer, w, h, THUMBNAIL_WIDTH, THUMBNAIL_HEIGHT)
+                .ok_or(Error::NoDynamicImage)?;
+            return Ok(thumbnail);
+        }
+
         let output_buffer = color_converter.convert_frame(input_buffer);
-
-        let image = RgbImage::from_raw(
-            self.frame_format.width as u32,
-            self.frame_format.height as u32,
-            output_buffer.to_vec(),
-        )
-        .ok_or(Error::InvalidBufferSize)?;
-
-        let dynamic_image = DynamicImage::from(image).thumbnail(THUMBNAIL_WIDTH, THUMBNAIL_HEIGHT);
-
-        Ok(dynamic_image)
+        let thumbnail = thumbnail_rgb8(&output_buffer, w, h, THUMBNAIL_WIDTH, THUMBNAIL_HEIGHT)
+            .ok_or(Error::NoDynamicImage)?;
+        return Ok(thumbnail);
     }
 }
 
@@ -122,4 +124,34 @@ impl TapeFrameReceiver {
     pub async fn receive_frame(&mut self) -> Option<FrameReceiverEvent> {
         self.inner.recv().await
     }
+}
+
+fn thumbnail_rgb8(
+    src: &[u8],
+    src_width: u32,
+    src_height: u32,
+    dst_width: u32,
+    dst_height: u32,
+) -> Option<DynamicImage> {
+    let dst_size = (dst_width * dst_height * 3) as usize;
+    let mut dst = vec![0u8; dst_size];
+
+    for y in 0..dst_height {
+        let src_y = (y * src_height / dst_height).min(src_height - 1);
+        let src_row = (src_y * src_width * 3) as usize;
+        let dst_row = (y * dst_width * 3) as usize;
+
+        for x in 0..dst_width {
+            let src_x = (x * src_width / dst_width).min(src_width - 1);
+            let si = src_row + (src_x * 3) as usize;
+            let di = dst_row + (x * 3) as usize;
+            dst[di] = src[si];
+            dst[di + 1] = src[si + 1];
+            dst[di + 2] = src[si + 2];
+        }
+    }
+
+    Some(DynamicImage::ImageRgb8(RgbImage::from_raw(
+        dst_width, dst_height, dst,
+    )?))
 }
