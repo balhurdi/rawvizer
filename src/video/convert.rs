@@ -1,3 +1,8 @@
+use rayon::{
+    iter::{IndexedParallelIterator, ParallelIterator},
+    slice::ParallelSliceMut,
+};
+
 use crate::video::VideoFrameFormat;
 
 type ConversionFunc =
@@ -45,36 +50,39 @@ fn identity(input_buffer: &[u8], output_buffer: &mut [u8], _: usize, _: usize) {
 
 fn v210_to_rgb8(input_buffer: &[u8], output_buffer: &mut [u8], width: usize, height: usize) {
     let row_stride = input_buffer.len() / height;
-
+    let out_row_size = width * 3;
     let full_groups = width / 6;
     let remaining = width % 6;
 
-    for row in 0..height {
-        let in_row = row * row_stride;
-        let out_row = row * width * 3;
+    output_buffer
+        .par_chunks_mut(out_row_size)
+        .enumerate()
+        .for_each(|(row, out_row)| {
+            let in_row = row * row_stride;
+            let in_data = &input_buffer[in_row..];
 
-        for g in 0..full_groups {
-            let off = in_row + g * 16;
-            let out_off = out_row + g * 6 * 3;
-            let w0 = u32::from_le_bytes(input_buffer[off..off + 4].try_into().unwrap());
-            let w1 = u32::from_le_bytes(input_buffer[off + 4..off + 8].try_into().unwrap());
-            let w2 = u32::from_le_bytes(input_buffer[off + 8..off + 12].try_into().unwrap());
-            let w3 = u32::from_le_bytes(input_buffer[off + 12..off + 16].try_into().unwrap());
-            let rgb = unpack_group(w0, w1, w2, w3);
-            output_buffer[out_off..out_off + 18].copy_from_slice(&rgb);
-        }
+            for g in 0..full_groups {
+                let off = g * 16;
+                let out_off = g * 6 * 3;
+                let w0 = u32::from_le_bytes(in_data[off..off + 4].try_into().unwrap());
+                let w1 = u32::from_le_bytes(in_data[off + 4..off + 8].try_into().unwrap());
+                let w2 = u32::from_le_bytes(in_data[off + 8..off + 12].try_into().unwrap());
+                let w3 = u32::from_le_bytes(in_data[off + 12..off + 16].try_into().unwrap());
+                let rgb = unpack_group(w0, w1, w2, w3);
+                out_row[out_off..out_off + 18].copy_from_slice(&rgb);
+            }
 
-        if remaining > 0 {
-            let off = in_row + full_groups * 16;
-            let out_off = out_row + full_groups * 6 * 3;
-            let w0 = u32::from_le_bytes(input_buffer[off..off + 4].try_into().unwrap());
-            let w1 = u32::from_le_bytes(input_buffer[off + 4..off + 8].try_into().unwrap());
-            let w2 = u32::from_le_bytes(input_buffer[off + 8..off + 12].try_into().unwrap());
-            let w3 = u32::from_le_bytes(input_buffer[off + 12..off + 16].try_into().unwrap());
-            let rgb = unpack_group(w0, w1, w2, w3);
-            output_buffer[out_off..out_off + remaining * 3].copy_from_slice(&rgb[..remaining * 3]);
-        }
-    }
+            if remaining > 0 {
+                let off = full_groups * 16;
+                let out_off = full_groups * 6 * 3;
+                let w0 = u32::from_le_bytes(in_data[off..off + 4].try_into().unwrap());
+                let w1 = u32::from_le_bytes(in_data[off + 4..off + 8].try_into().unwrap());
+                let w2 = u32::from_le_bytes(in_data[off + 8..off + 12].try_into().unwrap());
+                let w3 = u32::from_le_bytes(in_data[off + 12..off + 16].try_into().unwrap());
+                let rgb = unpack_group(w0, w1, w2, w3);
+                out_row[out_off..out_off + remaining * 3].copy_from_slice(&rgb[..remaining * 3]);
+            }
+        });
 }
 
 fn unpack_group(w0: u32, w1: u32, w2: u32, w3: u32) -> [u8; 18] {
