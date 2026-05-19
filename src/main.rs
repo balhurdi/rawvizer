@@ -6,6 +6,8 @@ mod ui;
 mod video;
 
 use clap::{Parser, ValueEnum};
+use tracing_chrome::{ChromeLayerBuilder, FlushGuard};
+use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 
 use crate::{
     app::App,
@@ -39,6 +41,8 @@ struct Args {
     height: u16,
     #[arg(long)]
     format: ImageFormat,
+    #[arg(long)]
+    tracing_file: Option<String>,
 }
 
 fn build_frame_format(args: &Args) -> VideoFrameFormat {
@@ -49,12 +53,33 @@ fn build_frame_format(args: &Args) -> VideoFrameFormat {
     }
 }
 
+#[derive(Default)]
+struct TracingContext {
+    flush_guard: Option<FlushGuard>,
+}
+
+impl TracingContext {
+    fn enable_tracing(&mut self, path: &str) {
+        let (chrome_layer, guard) = ChromeLayerBuilder::new().file(path).build();
+
+        let console_layer = console_subscriber::ConsoleLayer::builder().spawn();
+
+        tracing_subscriber::registry()
+            .with(chrome_layer)
+            .with(console_layer)
+            .init();
+
+        self.flush_guard = Some(guard)
+    }
+}
+
 #[tokio::main]
 async fn main() -> Result<()> {
-    console_subscriber::init();
-
     let args = Args::parse();
-
+    let mut tracing_ctx = TracingContext::default();
+    let _ = if let Some(tracing_file) = &args.tracing_file {
+        tracing_ctx.enable_tracing(&tracing_file)
+    };
     let frame_format = build_frame_format(&args);
     let file_loader = FileLoader::new(&args.path, frame_format.frame_size(), true)?;
 

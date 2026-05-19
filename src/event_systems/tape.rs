@@ -108,6 +108,7 @@ impl TapeFrameReceiver {
     }
 }
 
+#[tracing::instrument]
 fn create_dynamic_image(
     color_converter: &mut ColorConverter,
     width: u32,

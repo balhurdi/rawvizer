@@ -3,6 +3,7 @@ use crate::video::VideoFrameFormat;
 type ConversionFunc =
     fn(input_buffer: &[u8], output_buffer: &mut [u8], width: usize, height: usize);
 
+#[derive(Debug)]
 pub struct ColorConverter {
     width: usize,
     height: usize,
@@ -29,6 +30,7 @@ impl ColorConverter {
         }
     }
 
+    #[tracing::instrument]
     pub fn convert_frame(&mut self, buff: &[u8]) -> &[u8] {
         (self.conversion_func)(buff, &mut self.result_buffer, self.width, self.height);
 

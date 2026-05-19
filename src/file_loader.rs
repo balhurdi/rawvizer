@@ -19,6 +19,7 @@ impl FileBuffer {
     }
 }
 
+#[derive(Debug)]
 pub struct FileLoader {
     file: File,
     cache: Vec<u8>,
@@ -50,6 +51,7 @@ impl FileLoader {
 impl Iterator for FileLoader {
     type Item = Result<FileBuffer>;
 
+    #[tracing::instrument]
     fn next(&mut self) -> Option<Self::Item> {
         match self
             .file
