@@ -4,7 +4,7 @@ use tokio::sync::mpsc::{self, UnboundedReceiver, UnboundedSender};
 use crate::{
     error::{Error, Result},
     file_loader::FileLoader,
-    video::{PixelFormat, VideoFrameFormat, convert_frame},
+    video::{ColorConverter, PixelFormat, VideoFrameFormat},
 };
 
 const THUMBNAIL_WIDTH: u32 = 1280;
@@ -24,18 +24,13 @@ pub enum FrameReceiverEvent {
 pub struct Tape {
     file_loader: FileLoader,
     frame_format: VideoFrameFormat,
-    staging_buffer: Vec<u8>,
 }
 
 impl Tape {
     pub fn new(file_loader: FileLoader, frame_format: VideoFrameFormat) -> Self {
-        let buffer_size = (frame_format.width as usize)
-            * (frame_format.height as usize)
-            * INTERNAL_PIXEL_FORMAT.pixel_size_bytes();
         Self {
             file_loader,
             frame_format,
-            staging_buffer: vec![0u8; buffer_size],
         }
     }
 
@@ -45,6 +40,14 @@ impl Tape {
             mpsc::unbounded_channel::<FrameReceiverEvent>();
 
         tokio::spawn(async move {
+            let output_format = VideoFrameFormat {
+                width: self.frame_format.width,
+                height: self.frame_format.height,
+                pixel_format: INTERNAL_PIXEL_FORMAT,
+            };
+
+            let mut color_converter = ColorConverter::new(self.frame_format, output_format);
+
             loop {
                 let tape_event = controller_rx.recv().await;
 
@@ -56,9 +59,10 @@ impl Tape {
 
                     if let Some(Ok(f)) = frame {
                         match create_dynamic_image(
-                            self.frame_format,
+                            &mut color_converter,
+                            self.frame_format.width as u32,
+                            self.frame_format.height as u32,
                             f.data(),
-                            &mut self.staging_buffer,
                         ) {
                             Ok(img) => {
                                 let _ = frame_receiver_tx.send(FrameReceiverEvent::Frame(img));
@@ -105,24 +109,15 @@ impl TapeFrameReceiver {
 }
 
 fn create_dynamic_image(
-    input_format: VideoFrameFormat,
+    color_converter: &mut ColorConverter,
+    width: u32,
+    height: u32,
     input_buffer: &[u8],
-    output_buffer: &mut [u8],
 ) -> Result<DynamicImage> {
-    let output_format = VideoFrameFormat {
-        width: input_format.width,
-        height: input_format.height,
-        pixel_format: PixelFormat::RGB8,
-    };
+    let output_buffer = color_converter.convert_frame(input_buffer);
 
-    convert_frame(input_format, input_buffer, output_format, output_buffer);
-
-    let image = RgbImage::from_raw(
-        input_format.width as u32,
-        input_format.height as u32,
-        output_buffer.to_vec(),
-    )
-    .ok_or(Error::InvalidBufferSize)?;
+    let image = RgbImage::from_raw(width as u32, height as u32, output_buffer.to_vec())
+        .ok_or(Error::InvalidBufferSize)?;
 
     let dynamic_image = DynamicImage::from(image).thumbnail(THUMBNAIL_WIDTH, THUMBNAIL_HEIGHT);
 

@@ -1,29 +1,42 @@
 use crate::video::VideoFrameFormat;
 
-pub fn convert_frame(
-    input_frame_format: VideoFrameFormat,
-    input_buffer: &[u8],
-    output_frame_format: VideoFrameFormat,
-    output_buffer: &mut [u8],
-) {
-    match (
-        input_frame_format.pixel_format,
-        output_frame_format.pixel_format,
-    ) {
-        (super::PixelFormat::V210, super::PixelFormat::RGB8) => v210_to_rgb8(
-            input_buffer,
-            output_buffer,
-            input_frame_format.width as usize,
-            input_frame_format.height as usize,
-        ),
-        (super::PixelFormat::RGB8, super::PixelFormat::V210) => {
-            unimplemented!("There are no plans to support this conversion in the future")
+type ConversionFunc =
+    fn(input_buffer: &[u8], output_buffer: &mut [u8], width: usize, height: usize);
+
+pub struct ColorConverter {
+    width: usize,
+    height: usize,
+    result_buffer: Vec<u8>,
+    conversion_func: ConversionFunc,
+}
+
+impl ColorConverter {
+    pub fn new(from: VideoFrameFormat, into: VideoFrameFormat) -> Self {
+        let func = match (from.pixel_format, into.pixel_format) {
+            (super::PixelFormat::V210, super::PixelFormat::RGB8) => v210_to_rgb8,
+            (super::PixelFormat::RGB8, super::PixelFormat::V210) => {
+                unimplemented!("There are no plans to support this conversion in the future")
+            }
+
+            _ => identity,
+        };
+
+        Self {
+            width: from.width as usize,
+            height: from.height as usize,
+            result_buffer: vec![0u8; into.frame_size()],
+            conversion_func: func,
         }
-        _ => identity(input_buffer, output_buffer),
+    }
+
+    pub fn convert_frame(&mut self, buff: &[u8]) -> &[u8] {
+        (self.conversion_func)(buff, &mut self.result_buffer, self.width, self.height);
+
+        &self.result_buffer
     }
 }
 
-fn identity(input_buffer: &[u8], output_buffer: &mut [u8]) {
+fn identity(input_buffer: &[u8], output_buffer: &mut [u8], _: usize, _: usize) {
     // There must be a way around this copy
     output_buffer.copy_from_slice(input_buffer);
 }
