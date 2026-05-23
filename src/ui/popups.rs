@@ -2,7 +2,7 @@ use ratatui::{
     layout::{Alignment, Margin, Rect},
     style::Stylize,
     text::Line,
-    widgets::{Block, BorderType, Clear, Paragraph, Widget},
+    widgets::{Block, BorderType, Clear, Paragraph, StatefulWidget, Widget},
 };
 
 #[derive(Debug, Clone, Copy, Default)]
@@ -14,21 +14,21 @@ enum CurrentPopUp {
 }
 
 #[derive(Debug, Clone, Copy, Default)]
-struct PopUpState {
+pub struct PopUpState {
     show_help_popup: bool,
     show_info_popup: bool,
 }
 
 impl PopUpState {
-    fn show_help(&mut self) {
+    pub fn show_help(&mut self) {
         self.show_help_popup = true;
     }
 
-    fn show_info(&mut self) {
+    pub fn show_info(&mut self) {
         self.show_info_popup = true;
     }
 
-    fn exit(&mut self) {
+    pub fn exit(&mut self) {
         self.show_help_popup = false;
         self.show_info_popup = false;
     }
@@ -44,24 +44,22 @@ impl PopUpState {
     }
 }
 
-pub struct PopUp {
-    state: PopUpState,
-}
+pub struct PopUp;
 
 impl PopUp {
     pub fn new() -> Self {
-        PopUp {
-            state: PopUpState::default(),
-        }
+        PopUp
     }
 }
 
-impl Widget for PopUp {
-    fn render(self, area: ratatui::prelude::Rect, buf: &mut ratatui::prelude::Buffer)
-    where
-        Self: Sized,
-    {
-        HelpPopUp::new().render(area, buf);
+impl StatefulWidget for PopUp {
+    type State = PopUpState;
+    fn render(self, area: Rect, buf: &mut ratatui::prelude::Buffer, state: &mut Self::State) {
+        match state.current_pop_up() {
+            CurrentPopUp::Help => HelpPopUp::new().render(area, buf),
+            CurrentPopUp::Info => todo!(),
+            CurrentPopUp::None => {}
+        }
     }
 }
 
@@ -92,7 +90,8 @@ impl Widget for HelpPopUp {
 [Left Arrow]   Previous frame
 [Space]        Play / Pause
 [h]            Toggle help
-[i]            Toggle stream info";
+[i]            Toggle stream info
+[q]            Exit program";
 
         Block::bordered()
             .title(" Esc to exit ")

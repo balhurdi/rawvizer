@@ -3,7 +3,10 @@ use ratatui::{
     widgets::{Block, BorderType, StatefulWidget, Widget},
 };
 
-use crate::{app::App, ui::video_player::VideoPlayer};
+use crate::{
+    app::App,
+    ui::{PopUp, video_player::VideoPlayer},
+};
 
 impl Widget for &mut App {
     #[tracing::instrument]
@@ -21,5 +24,7 @@ impl Widget for &mut App {
 
         let video_player = VideoPlayer::new();
         video_player.render(video_block_inner, buf, self.video_player_state());
+
+        PopUp::new().render(area, buf, self.popup_state());
     }
 }

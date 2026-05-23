@@ -6,7 +6,7 @@ use crate::{
     error::Result,
     event_systems::{AppEvent, Event, EventHandler, Tape, TapeController, TapeEvent},
     file_loader::FileLoader,
-    ui::VideoPlayerState,
+    ui::{PopUpState, VideoPlayerState},
     video::VideoFrameFormat,
 };
 
@@ -15,6 +15,7 @@ pub struct App {
     events: EventHandler,
     running: bool,
     video_player_state: VideoPlayerState,
+    popup_state: PopUpState,
     tape_controller: TapeController,
     frame_request_in_flight: bool,
 }
@@ -27,6 +28,7 @@ impl App {
             events: EventHandler::new(tape_recv),
             running: true,
             video_player_state: VideoPlayerState::new(),
+            popup_state: PopUpState::default(),
             tape_controller,
             frame_request_in_flight: false,
         })
@@ -40,6 +42,7 @@ impl App {
                     CrosstermEvent::Key(key_event) if key_event.kind == KeyEventKind::Press => {
                         self.handle_key_event(&key_event)
                     }
+
                     _ => {}
                 },
 
@@ -62,11 +65,18 @@ impl App {
         &mut self.video_player_state
     }
 
+    pub(crate) fn popup_state(&mut self) -> &mut PopUpState {
+        &mut self.popup_state
+    }
+
     fn handle_key_event(&mut self, key_event: &KeyEvent) {
         match key_event.code {
             KeyCode::Esc | KeyCode::Char('q') => self.events.send(AppEvent::Quit),
             KeyCode::Right => self.events.send(AppEvent::NextFrame),
             KeyCode::Left => self.events.send(AppEvent::PreviousFrame),
+            KeyCode::Char('h') => self.popup_state.show_help(),
+            KeyCode::Char('i') => self.popup_state.show_info(),
+
             _ => {}
         }
     }
