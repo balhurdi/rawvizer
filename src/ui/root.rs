@@ -1,5 +1,5 @@
 use ratatui::{
-    layout::Alignment,
+    layout::HorizontalAlignment,
     widgets::{Block, BorderType, StatefulWidget, Widget},
 };
 
@@ -12,8 +12,8 @@ impl Widget for &mut App {
         Self: Sized,
     {
         let video_block = Block::bordered()
-            .title("Raw Vis")
-            .title_alignment(Alignment::Center)
+            .title_bottom("[ h - Help | i - Info ]")
+            .title_alignment(HorizontalAlignment::Right)
             .border_type(BorderType::Rounded);
 
         let video_block_inner = video_block.inner(area);
