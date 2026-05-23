@@ -71,11 +71,12 @@ impl App {
 
     fn handle_key_event(&mut self, key_event: &KeyEvent) {
         match key_event.code {
-            KeyCode::Esc | KeyCode::Char('q') => self.events.send(AppEvent::Quit),
+            KeyCode::Char('q') => self.events.send(AppEvent::Quit),
             KeyCode::Right => self.events.send(AppEvent::NextFrame),
             KeyCode::Left => self.events.send(AppEvent::PreviousFrame),
             KeyCode::Char('h') => self.popup_state.show_help(),
             KeyCode::Char('i') => self.popup_state.show_info(),
+            KeyCode::Esc => self.popup_state.exit(),
 
             _ => {}
         }
