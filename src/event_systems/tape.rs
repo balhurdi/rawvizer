@@ -98,7 +98,7 @@ impl Tape {
             return Ok(thumbnail);
         }
 
-        let output_buffer = color_converter.convert_frame(input_buffer);
+        let output_buffer = color_converter.convert_frame(input_buffer)?;
         let thumbnail = thumbnail_rgb8(&output_buffer, w, h, THUMBNAIL_WIDTH, THUMBNAIL_HEIGHT)
             .ok_or(Error::NoDynamicImage)?;
         return Ok(thumbnail);

@@ -3,10 +3,13 @@ use rayon::{
     slice::ParallelSliceMut,
 };
 
-use crate::video::VideoFrameFormat;
+use crate::{
+    error::{Error, Result},
+    video::VideoFrameFormat,
+};
 
 type ConversionFunc =
-    fn(input_buffer: &[u8], output_buffer: &mut [u8], width: usize, height: usize);
+    fn(input_buffer: &[u8], output_buffer: &mut [u8], width: usize, height: usize) -> Result<()>;
 
 #[derive(Debug)]
 pub struct ColorConverter {
@@ -36,19 +39,20 @@ impl ColorConverter {
     }
 
     #[tracing::instrument]
-    pub fn convert_frame(&mut self, buff: &[u8]) -> Vec<u8> {
+    pub fn convert_frame(&mut self, buff: &[u8]) -> Result<Vec<u8>> {
         let mut output_buffer = vec![0u8; self.result_size];
-        (self.conversion_func)(buff, &mut output_buffer, self.width, self.height);
-        output_buffer
+        (self.conversion_func)(buff, &mut output_buffer, self.width, self.height)?;
+        Ok(output_buffer)
     }
 }
 
-fn identity(input_buffer: &[u8], output_buffer: &mut [u8], _: usize, _: usize) {
+fn identity(input_buffer: &[u8], output_buffer: &mut [u8], _: usize, _: usize) -> Result<()> {
     // There must be a way around this copy
     output_buffer.copy_from_slice(input_buffer);
+    Ok(())
 }
 
-fn v210_to_rgb8(input_buffer: &[u8], output_buffer: &mut [u8], width: usize, height: usize) {
+fn v210_to_rgb8(input_buffer: &[u8], output_buffer: &mut [u8], width: usize, height: usize) -> Result<()> {
     let row_stride = input_buffer.len() / height;
     let out_row_size = width * 3;
     let full_groups = width / 6;
@@ -57,17 +61,17 @@ fn v210_to_rgb8(input_buffer: &[u8], output_buffer: &mut [u8], width: usize, hei
     output_buffer
         .par_chunks_mut(out_row_size)
         .enumerate()
-        .for_each(|(row, out_row)| {
+        .try_for_each(|(row, out_row)| {
             let in_row = row * row_stride;
             let in_data = &input_buffer[in_row..];
 
             for g in 0..full_groups {
                 let off = g * 16;
                 let out_off = g * 6 * 3;
-                let w0 = u32::from_le_bytes(in_data[off..off + 4].try_into().unwrap());
-                let w1 = u32::from_le_bytes(in_data[off + 4..off + 8].try_into().unwrap());
-                let w2 = u32::from_le_bytes(in_data[off + 8..off + 12].try_into().unwrap());
-                let w3 = u32::from_le_bytes(in_data[off + 12..off + 16].try_into().unwrap());
+                let w0 = u32::from_le_bytes(in_data[off..off + 4].try_into()?);
+                let w1 = u32::from_le_bytes(in_data[off + 4..off + 8].try_into()?);
+                let w2 = u32::from_le_bytes(in_data[off + 8..off + 12].try_into()?);
+                let w3 = u32::from_le_bytes(in_data[off + 12..off + 16].try_into()?);
                 let rgb = unpack_group(w0, w1, w2, w3);
                 out_row[out_off..out_off + 18].copy_from_slice(&rgb);
             }
@@ -75,14 +79,18 @@ fn v210_to_rgb8(input_buffer: &[u8], output_buffer: &mut [u8], width: usize, hei
             if remaining > 0 {
                 let off = full_groups * 16;
                 let out_off = full_groups * 6 * 3;
-                let w0 = u32::from_le_bytes(in_data[off..off + 4].try_into().unwrap());
-                let w1 = u32::from_le_bytes(in_data[off + 4..off + 8].try_into().unwrap());
-                let w2 = u32::from_le_bytes(in_data[off + 8..off + 12].try_into().unwrap());
-                let w3 = u32::from_le_bytes(in_data[off + 12..off + 16].try_into().unwrap());
+                let w0 = u32::from_le_bytes(in_data[off..off + 4].try_into()?);
+                let w1 = u32::from_le_bytes(in_data[off + 4..off + 8].try_into()?);
+                let w2 = u32::from_le_bytes(in_data[off + 8..off + 12].try_into()?);
+                let w3 = u32::from_le_bytes(in_data[off + 12..off + 16].try_into()?);
                 let rgb = unpack_group(w0, w1, w2, w3);
                 out_row[out_off..out_off + remaining * 3].copy_from_slice(&rgb[..remaining * 3]);
             }
-        });
+
+            Ok::<_, Error>(())
+        })?;
+
+    Ok(())
 }
 
 fn unpack_group(w0: u32, w1: u32, w2: u32, w3: u32) -> [u8; 18] {

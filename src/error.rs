@@ -20,6 +20,8 @@ pub enum Error {
     TapeChannel(#[from] tokio::sync::mpsc::error::SendError<TapeEvent>),
     #[error("No dynamic image")]
     NoDynamicImage,
+    #[error("Invalid conversion")]
+    TypeConversion(#[from] std::array::TryFromSliceError),
 }
 
 pub type Result<T> = std::result::Result<T, Error>;
