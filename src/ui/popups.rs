@@ -5,7 +5,7 @@ use ratatui::{
     widgets::{Block, BorderType, Clear, Paragraph, StatefulWidget, Widget},
 };
 
-#[derive(Debug, Clone, Copy, Default)]
+#[derive(Debug, Clone, Copy, Default, PartialEq)]
 enum CurrentPopUp {
     Help,
     Info,
@@ -22,10 +22,12 @@ pub struct PopUpState {
 impl PopUpState {
     pub fn show_help(&mut self) {
         self.show_help_popup = true;
+        self.show_info_popup = false;
     }
 
     pub fn show_info(&mut self) {
         self.show_info_popup = true;
+        self.show_help_popup = false;
     }
 
     pub fn exit(&mut self) {
@@ -108,5 +110,55 @@ impl Widget for HelpPopUp {
             }),
             buf,
         );
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn initially_none() {
+        let state = PopUpState::default();
+        assert_eq!(state.current_pop_up(), CurrentPopUp::None);
+    }
+
+    #[test]
+    fn show_help_does_not_show_info() {
+        let mut state = PopUpState::default();
+        state.show_help();
+        assert_eq!(state.current_pop_up(), CurrentPopUp::Help);
+    }
+
+    #[test]
+    fn show_info_does_not_show_help() {
+        let mut state = PopUpState::default();
+        state.show_info();
+        assert_eq!(state.current_pop_up(), CurrentPopUp::Info);
+    }
+
+    #[test]
+    fn show_help_shows_only_help() {
+        let mut state = PopUpState::default();
+        state.show_info();
+        state.show_help();
+        assert_eq!(state.current_pop_up(), CurrentPopUp::Help);
+    }
+
+    #[test]
+    fn show_info_shows_only_info() {
+        let mut state = PopUpState::default();
+        state.show_help();
+        state.show_info();
+        assert_eq!(state.current_pop_up(), CurrentPopUp::Info);
+    }
+
+    #[test]
+    fn exit_clears_both() {
+        let mut state = PopUpState::default();
+        state.show_help();
+        state.show_info();
+        state.exit();
+        assert_eq!(state.current_pop_up(), CurrentPopUp::None);
     }
 }
