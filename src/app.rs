@@ -28,7 +28,7 @@ impl App {
             events: EventHandler::new(tape_recv),
             running: true,
             video_player_state: VideoPlayerState::new(),
-            popup_state: PopUpState::default(),
+            popup_state: PopUpState::with_frame_format(frame_format),
             tape_controller,
             frame_request_in_flight: false,
         })

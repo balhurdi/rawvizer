@@ -5,6 +5,8 @@ use ratatui::{
     widgets::{Block, BorderType, Clear, Paragraph, StatefulWidget, Widget},
 };
 
+use crate::video::VideoFrameFormat;
+
 #[derive(Debug, Clone, Copy, Default, PartialEq)]
 enum CurrentPopUp {
     Help,
@@ -17,6 +19,7 @@ enum CurrentPopUp {
 pub struct PopUpState {
     show_help_popup: bool,
     show_info_popup: bool,
+    frame_format: Option<VideoFrameFormat>,
 }
 
 impl PopUpState {
@@ -33,6 +36,13 @@ impl PopUpState {
     pub fn exit(&mut self) {
         self.show_help_popup = false;
         self.show_info_popup = false;
+    }
+
+    pub fn with_frame_format(frame_format: VideoFrameFormat) -> Self {
+        Self {
+            frame_format: Some(frame_format),
+            ..Default::default()
+        }
     }
 
     fn current_pop_up(&self) -> CurrentPopUp {
@@ -59,7 +69,11 @@ impl StatefulWidget for PopUp {
     fn render(self, area: Rect, buf: &mut ratatui::prelude::Buffer, state: &mut Self::State) {
         match state.current_pop_up() {
             CurrentPopUp::Help => HelpPopUp::new().render(area, buf),
-            CurrentPopUp::Info => todo!(),
+            CurrentPopUp::Info => {
+                if let Some(frame_format) = state.frame_format {
+                    InfoPopUp::new(frame_format).render(area, buf);
+                }
+            }
             CurrentPopUp::None => {}
         }
     }
@@ -98,6 +112,60 @@ impl Widget for HelpPopUp {
         Block::bordered()
             .title(" Esc to exit ")
             .title(Line::from(" Help ").centered())
+            .border_type(BorderType::Rounded)
+            .white()
+            .on_black()
+            .render(popup, buf);
+
+        Paragraph::new(content).alignment(Alignment::Left).render(
+            popup.inner(Margin {
+                horizontal: 2,
+                vertical: 2,
+            }),
+            buf,
+        );
+    }
+}
+
+struct InfoPopUp {
+    video_frame_foramt: VideoFrameFormat,
+}
+
+impl InfoPopUp {
+    fn new(video_frame_foramt: VideoFrameFormat) -> Self {
+        Self { video_frame_foramt }
+    }
+}
+
+impl Widget for InfoPopUp {
+    fn render(self, area: Rect, buf: &mut ratatui::prelude::Buffer)
+    where
+        Self: Sized,
+    {
+        let popup = Rect {
+            x: area.width.saturating_sub(32),
+            y: 1,
+            width: 32,
+            height: area.height.saturating_sub(2),
+        };
+
+        Clear.render(popup, buf);
+
+        let content = format!(
+            "\
+Pixel Format: {:?}
+Width:        {}
+Height:       {}
+Frame Size:   {} bytes",
+            self.video_frame_foramt.pixel_format,
+            self.video_frame_foramt.width,
+            self.video_frame_foramt.height,
+            self.video_frame_foramt.frame_size(),
+        );
+
+        Block::bordered()
+            .title(" Esc to exit ")
+            .title(Line::from(" Info ").centered())
             .border_type(BorderType::Rounded)
             .white()
             .on_black()
