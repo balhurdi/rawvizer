@@ -49,7 +49,7 @@ impl App {
                 Event::App(app_event) => match app_event {
                     AppEvent::Quit => self.running = false,
                     AppEvent::NextFrame => self.request_next_frame()?,
-                    AppEvent::PreviousFrame => {}
+                    AppEvent::PreviousFrame => self.request_previous_frame()?,
                     AppEvent::FrameReady(image) => self.present_next_frame(image),
                     AppEvent::InternalError(err) => {
                         panic!("{err}")
@@ -89,6 +89,15 @@ impl App {
         self.frame_request_in_flight = true;
         self.tape_controller.send_event(TapeEvent::NextFrame)?;
 
+        Ok(())
+    }
+
+    fn request_previous_frame(&mut self) -> Result<()> {
+        if self.frame_request_in_flight {
+            return Ok(());
+        }
+        self.frame_request_in_flight = true;
+        self.tape_controller.send_event(TapeEvent::PreviousFrame)?;
         Ok(())
     }
 

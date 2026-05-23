@@ -56,7 +56,10 @@ impl Tape {
                 if let Some(te) = tape_event {
                     let frame = match te {
                         TapeEvent::NextFrame => self.file_loader.next(),
-                        TapeEvent::PreviousFrame => todo!(),
+                        TapeEvent::PreviousFrame => {
+                            self.file_loader.reverse(2);
+                            self.file_loader.next()
+                        }
                     };
 
                     if let Some(Ok(f)) = frame {

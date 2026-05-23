@@ -46,6 +46,14 @@ impl FileLoader {
             enable_loop,
         })
     }
+
+    pub fn reverse(&mut self, block_count: usize) {
+        if self.current_block < block_count {
+            self.current_block = 0;
+        } else {
+            self.current_block -= block_count
+        }
+    }
 }
 
 impl Iterator for FileLoader {
