@@ -24,6 +24,7 @@ pub enum AppEvent {
     InternalError(String),
 }
 
+#[derive(Debug)]
 pub struct EventHandler {
     sender: mpsc::UnboundedSender<Event>,
     receiver: mpsc::UnboundedReceiver<Event>,
