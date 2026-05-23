@@ -79,10 +79,10 @@ impl Widget for HelpPopUp {
         Self: Sized,
     {
         let popup = Rect {
-            x: area.width / 4,
-            y: area.height / 3,
-            width: area.width / 2,
-            height: area.height / 3,
+            x: area.width.saturating_sub(32),
+            y: 1,
+            width: 32,
+            height: area.height.saturating_sub(2),
         };
 
         Clear.render(popup, buf);
